@@ -1,0 +1,9 @@
+[
+  {"topic": "agents", "question": "In your own words, what is an AI agent and how is it different from a chatbot?"},
+  {"topic": "agents", "question": "What is the difference between RAG and an agent?"},
+  {"topic": "protocols", "question": "What problem does MCP solve, and how is it different from A2A?"},
+  {"topic": "nanda", "question": "What is an agent registry, and why does it need trust or signatures?"},
+  {"topic": "nanda", "question": "Walk me through the PR you got merged into nandatown. What was hard about it?"},
+  {"topic": "behavioral", "question": "Tell me about a time a code review changed your approach."},
+  {"topic": "behavioral", "question": "Why do you want this fellowship?"}
+]
