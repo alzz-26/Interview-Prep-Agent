@@ -8,6 +8,9 @@ def load_questions(path = QUESTIONS_FILE) :
     questions = json.loads(path.read_text(encoding="utf-8"))
     return questions
 
+def list_topics(questions) :
+    return {item.get("topic") for item in questions}
+
 def pick_question(questions, topic=None) :
     if topic is not None:
         filtered_questions = [item for item in questions if item.get("topic") == topic]
@@ -23,11 +26,17 @@ def save_answer(question, answer, path=ANSWERS_FILE) :
     path.write_text(json.dumps(answers, indent=2), encoding="utf-8")
 
 def main() :
-    topic = input("Enter preferred topic if any : ")
-    if topic == "" :
-        topic = None
-    print("Chosen topic :", topic)
     questions = load_questions()
+    print("Available topic :")
+    topics = list_topics(questions)
+    for i in topics :
+        print(i)
+    topic = input("Enter preferred topic if any : ")
+    if topic == "" or topic not in topics:
+        topic = None
+        print("Chosen topic not available -> Choosing a random topic.")
+    else:
+        print("Chosen topic :", topic)
     picked_question = pick_question(questions, topic)
     print("Picked Question :", picked_question["question"])
     answer = input("Enter your answer : ")
