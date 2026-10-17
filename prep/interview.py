@@ -27,8 +27,8 @@ def save_answer(question, answer, path=ANSWERS_FILE) :
 
 def main() :
     questions = load_questions()
-    print("Available topic :")
-    topics = list_topics(questions)
+    print("Available topics :")
+    topics = sorted(list_topics(questions))
     for i in topics :
         print(i)
     topic = input("Enter preferred topic if any : ")
