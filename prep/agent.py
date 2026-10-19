@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 questions = interview.load_questions()
 client = genai.Client()
+MAX_STEPS = 5
 
 def get_topics() -> list[str]:
     """Return the list of interview topics available in the question bank.
@@ -33,19 +34,42 @@ def get_question(topic: str | None=None) -> dict:
     question = interview.pick_question(questions, topic)
     return question
 
+MODEL = "gemini-3.6-flash"
+MAX_STEPS = 5
+TOOL_FUNCTIONS = [get_topics, get_question]
+TOOLS = {f.__name__: f for f in TOOL_FUNCTIONS}
+
+config = types.GenerateContentConfig(
+    tools=TOOL_FUNCTIONS,
+    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+)
+
+def run_agent(user_message: str) -> str:
+    """Run the tool loop until the AI gives a final text answer."""
+    contents = [types.Content(role="user", parts=[types.Part(text=user_message)])]
+
+    for step in range(MAX_STEPS):
+        response = client.models.generate_content(model=MODEL, contents=contents, config=config)
+        if not response.function_calls:
+            return response.text
+        contents.append(response.candidates[0].content)
+        result_parts = []
+        for call in response.function_calls:
+            print("🔧", call.name, call.args)
+            tool = TOOLS.get(call.name)
+            if tool is None:
+                result = {"error": "Tool not found", "available_tools": list(TOOLS.keys())}
+            else:
+                result = tool(**call.args)
+            result_parts.append(
+                types.Part.from_function_response(name=call.name, response={"result": result})
+            )
+        contents.append(types.Content(role="user", parts=result_parts))
+
+    return "Stopped: too many steps."
+
 def main():
-    config = types.GenerateContentConfig(
-        tools=[get_topics, get_question],    # your two wrapper functions (no brackets!)
-        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-    )
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents="Give me one interview question about python",
-        config=config,
-    )
-    print("Text:", response.text)
-    for call in response.function_calls or []:
-        print("AI wants to run:", call.name, call.args)
+    print(run_agent("Give me one interview question about nanda"))
 
 if __name__ == "__main__" :
     main()
