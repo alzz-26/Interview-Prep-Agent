@@ -28,7 +28,7 @@ def save_answer(question: dict, answer: str, path: Path=ANSWERS_FILE) -> None:
         answers = json.loads(path.read_text(encoding="utf-8"))
     else:
         answers = []
-    answers.append({"question": question["question"], "answer": answer})
+    answers.append({"topic": question["topic"], "question": question["question"], "answer": answer})
     path.write_text(json.dumps(answers, indent=2), encoding="utf-8")
 
 def main() :

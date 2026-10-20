@@ -40,6 +40,6 @@ def test_save_answer_appends(tmp_path):
 
     saved = json.loads(path.read_text(encoding="utf-8"))
     assert saved == [
-        {"question": "What is an agent?", "answer": "An LLM in a tool loop"},
-        {"question": "What is a registry?", "answer": "A phone book for agents"},
+        {"topic": "agents", "question": "What is an agent?", "answer": "An LLM in a tool loop"},
+        {"topic": "nanda", "question": "What is a registry?", "answer": "A phone book for agents"},
     ]
