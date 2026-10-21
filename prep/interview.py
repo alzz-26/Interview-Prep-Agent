@@ -21,6 +21,18 @@ def pick_question(questions: list[dict], topic: str | None=None) -> dict:
         return random.choice(filtered_questions)
     return random.choice(questions)
 
+def add_question(topic: str, question: str, path: Path = QUESTIONS_FILE) -> None:
+    """Saves the picked/generated question and its topic as dict in question file
+    if its not present already."""
+    if path.exists() :
+            questions = json.loads(path.read_text(encoding="utf-8"))
+            if {"topic": topic, "question": question} in questions:
+                return
+    else:
+        questions = []
+    questions.append({"topic": topic, "question": question})
+    path.write_text(json.dumps(questions, indent=2), encoding="utf-8")
+
 def save_answer(question: dict, answer: str, path: Path=ANSWERS_FILE) -> None:
     """Saves the picked question and its answer as a list of dicts in answer file,
     creates it as well if not there."""

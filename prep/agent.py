@@ -1,14 +1,15 @@
 import time
-
 import prep.interview as interview
 from google import genai
 from google.genai import types, errors
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
-questions = interview.load_questions()
 client = genai.Client()
 MAX_STEPS = 5
+JD_FILE = Path(__file__).parent/"interview_details.txt"
+JD = JD_FILE.read_text(encoding="utf-8") if JD_FILE.exists() else "General software / AI interview"
 
 def get_topics() -> list[str]:
     """Return the list of interview topics available in the question bank.
@@ -16,6 +17,7 @@ def get_topics() -> list[str]:
     Use this to see which topics exist before asking for a question on a
     specific topic.
     """
+    questions = interview.load_questions()
     topics = interview.list_topics(questions)
     return sorted(topics)
 
@@ -30,11 +32,25 @@ def get_question(topic: str | None=None) -> dict:
         A dict with "topic" and "question". If the topic is unknown, returns
         a dict with "error" and "available_topics" instead.
     """
+    questions = interview.load_questions()
     topics = get_topics()
     if topic is not None and topic not in topics:
         return {"error": "topic not found", "available_topics": topics}
     question = interview.pick_question(questions, topic)
     return question
+
+def save_question(topic: str, question: str) -> dict:
+    """Saves the generated question in the question bank. Called after a new question is generated.
+    
+    Args:
+        topic: The topic of the question.
+        question: The question asked.
+    
+    Returns:
+        A dict to support JSON format simply stating the success/saved status.
+    """
+    interview.add_question(topic, question)
+    return {"saved": True}
 
 def record_answer(topic: str, question: str, answer: str) -> dict:
     """Saves the question, topic and answer in a file. Called just after the user gives the answer as input.
@@ -52,16 +68,42 @@ def record_answer(topic: str, question: str, answer: str) -> dict:
     return {"saved": True}
 
 MODEL = "gemini-3.6-flash"
-MAX_STEPS = 5
-TOOL_FUNCTIONS = [get_topics, get_question, record_answer]
+TOOL_FUNCTIONS = [get_topics, get_question, record_answer, save_question]
 TOOLS = {f.__name__: f for f in TOOL_FUNCTIONS}
-SYSTEM_INSTRUCTION = "Imagine yourself as an mock interviewer who is kind and soft but evaluates fairly and strictly. The following are the steps you are required to follow:\n" \
-"1. Greet, and ask which topic the user wants to practise.\n" \
-"2. Get a question with the tool and ask it word for word, one at a time.\n" \
-"3. Wait for the answer, then call record_answer.\n" \
-"4. Give brief feedback: a score out of 10, one strength, one improvement.\n" \
-"5. Ask whether they want another question."
 
+SYSTEM_INSTRUCTION = f"""You are a mock interviewer: kind and encouraging, but you evaluate fairly and strictly.
+
+# Interview details
+{JD}
+
+# How to run the interview
+1. Greet the candidate briefly and ask which topic they want to start with.
+   Offer the topics from the Focus topics above.
+2. Ask ONE question at a time. Either:
+   - get one from the bank with get_question and ask it word for word, or
+   - write your own question tailored to the interview details, then save it
+     with save_question using a topic label from the Focus topics.
+3. Wait for the candidate's answer. Never answer a question yourself.
+4. Call record_answer right away with the topic, exact question and answer.
+5. Score the answer out of 10 (privately, for now).
+6. Decide on a follow-up based on the score:
+   - Score below 6: ask ONE follow-up about the biggest gap in the answer,
+     to give the candidate a chance to improve it.
+   - Score 6 to 8: no follow-up, move on.
+   - Score above 8: ask ONE harder "stretch" follow-up that goes deeper
+     into the same topic (e.g. edge cases, trade-offs, real-world use).
+   Never ask more than one follow-up per question.
+7. If you asked a follow-up, call record_answer again for it,
+   using the follow-up question as the question.
+8. Give brief feedback: the score out of 10, one strength, one improvement.
+   If there was a follow-up, mention how the follow-up answer changed the score.
+9. Ask whether they want another question, and on which topic.
+
+# Rules
+- Keep your messages short; this is a conversation, not an essay.
+- Use the tools only when needed; do not call get_topics if the topics are
+  already listed above.
+"""
 config = types.GenerateContentConfig(
     tools=TOOL_FUNCTIONS,
     automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
@@ -92,6 +134,7 @@ def run_agent(content: list) -> str:
     return "Stopped: too many steps."
 
 def main():
+    """Runs the AI agent for mock interview."""
     contents = [types.Content(role="user", parts=[types.Part(text="Start the interview.")])]
     try:
         while True:
@@ -107,6 +150,9 @@ def main():
             user_text = input("You: ").strip()
             while not user_text:
                 user_text = input("You: ").strip()
+            if user_text.lower() == ("quit" or "exit"):
+                print("Thanks for the motivation to prepare. Good luck! Ending...")
+                break
             contents.append(types.Content(role="user", parts=[types.Part(text=user_text)]))
     except KeyboardInterrupt:
         print("User interrupted the conversation. Ending...")

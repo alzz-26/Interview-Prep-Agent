@@ -1,5 +1,6 @@
 import json
 import prep.interview as p
+from pathlib import Path
 
 QUESTIONS = [
     {"topic": "agents", "question": "What is an agent?"},
@@ -31,13 +32,29 @@ def test_pick_question_filters_by_topic():
 def test_pick_question_without_topic_picks_any():
     assert p.pick_question(QUESTIONS) in QUESTIONS
 
+def test_add_question_unique(tmp_path):
+    path = tmp_path / "questions.json"
+    p.add_question("random", "Is the test working?", path)
+    p.add_question("random", "Is the test really working?", path)
+    added = json.loads(path.read_text(encoding="utf-8"))
+    assert added == [
+        {"topic": "random", "question": "Is the test working?"},
+        {"topic": "random", "question": "Is the test really working?"},
+    ]
+
+def test_add_question_duplicates(tmp_path):
+    path = tmp_path / "questions.json"
+    p.add_question("random", "Is the test working?", path)
+    p.add_question("random", "Is the test working?", path)
+    added = json.loads(path.read_text(encoding="utf-8"))
+    assert added == [
+        {"topic": "random", "question": "Is the test working?"},
+    ]
 
 def test_save_answer_appends(tmp_path):
     path = tmp_path / "answers.json"  # a temporary file, so the real one is untouched
-
     p.save_answer(QUESTIONS[0], "An LLM in a tool loop", path)
     p.save_answer(QUESTIONS[1], "A phone book for agents", path)
-
     saved = json.loads(path.read_text(encoding="utf-8"))
     assert saved == [
         {"topic": "agents", "question": "What is an agent?", "answer": "An LLM in a tool loop"},
