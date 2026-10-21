@@ -3,3 +3,4 @@ __pycache__/
 .pytest_cache/
 .venv/
 prep/answers.json
+prep/interview_details.txt

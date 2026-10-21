@@ -1,0 +1,22 @@
+# Interview
+[Company / programme name], [type of interview, e.g. technical interview].
+Format: [e.g. 45 min video call, technical + behavioral]
+
+# Candidate
+- [Experience level, e.g. final-year student, comfortable with Python]
+- [A project or contribution you can talk about, in one line]
+- [Another highlight: internship, hackathon, open-source PR...]
+
+# Focus topics
+- [topic]: [subtopics, comma separated]
+- [topic]: [subtopics, comma separated]
+- behavioral: [e.g. motivation, teamwork, handling feedback]
+
+# Style
+- [e.g. Mix concept questions with "walk me through your work"]
+- [e.g. Expect structured answers with an example; probe vague answers]
+
+# How to use this file
+Copy it to interview_details.txt (git-ignored) and fill in your own details.
+Topic names (the part before ":") are used as labels for saved questions,
+so keep them short and lowercase.
