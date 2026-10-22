@@ -30,5 +30,9 @@
   {
     "topic": "testing",
     "question": "When working on registry logic or protocol code, how do you define and test state invariants, and how do you use test-first approaches or fault injection to catch subtle security or concurrency edge cases? Walk me through a specific example from your past work."
+  },
+  {
+    "topic": "behavioral",
+    "question": "When working on your PR to nandatown for the index.owned.v1 registry plugin, you had to ensure security invariants like preventing forged cards from evicting listings. Walk me through a piece of critical review feedback or a challenging edge case you encountered during that process, how you responded to it, and what you learned."
   }
 ]

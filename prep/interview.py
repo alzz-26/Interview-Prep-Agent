@@ -9,9 +9,34 @@ def load_questions(path: Path=QUESTIONS_FILE) -> list[dict]:
     questions = json.loads(path.read_text(encoding="utf-8"))
     return questions
 
+def load_answers(path=ANSWERS_FILE) -> list[dict]:
+    """Load the file containing the answers to the questions ansked.
+    Return empty list of file not created yet."""
+    if not path.exists():
+        return []
+    answers = json.loads(path.read_text(encoding="utf-8"))
+    return answers
+
 def list_topics(questions: list[dict]) -> set[str]:
     """Find list of unique topics and return as a set."""
     return {item.get("topic") for item in questions}
+
+def topic_stats(answers: list[dict]) -> dict[str, dict]:
+    """Return count and average score per topic, skipping unscored answers."""
+    scores = {}
+    for record in answers:
+        topic = record.get("topic")
+        score = record.get("score")
+        if topic is None or score is None:
+            continue
+        if topic not in scores:
+            scores[topic] = []
+        scores[topic].append(score)
+
+    return {
+        topic: {"count": len(s), "avg_score": round(sum(s) / len(s), 1)}
+        for topic, s in scores.items()
+    }
 
 def pick_question(questions: list[dict], topic: str | None=None) -> dict:
     """Pick a question from the question bank from any 
@@ -33,14 +58,14 @@ def add_question(topic: str, question: str, path: Path = QUESTIONS_FILE) -> None
     questions.append({"topic": topic, "question": question})
     path.write_text(json.dumps(questions, indent=2), encoding="utf-8")
 
-def save_answer(question: dict, answer: str, path: Path=ANSWERS_FILE) -> None:
+def save_answer(question: dict, answer: str, score: int | None=None, path: Path=ANSWERS_FILE) -> None:
     """Saves the picked question and its answer as a list of dicts in answer file,
     creates it as well if not there."""
     if path.exists() :
         answers = json.loads(path.read_text(encoding="utf-8"))
     else:
         answers = []
-    answers.append({"topic": question["topic"], "question": question["question"], "answer": answer})
+    answers.append({"topic": question["topic"], "question": question["question"], "answer": answer, "score": score})
     path.write_text(json.dumps(answers, indent=2), encoding="utf-8")
 
 def main() :

@@ -52,29 +52,48 @@ def save_question(topic: str, question: str) -> dict:
     interview.add_question(topic, question)
     return {"saved": True}
 
-def record_answer(topic: str, question: str, answer: str) -> dict:
-    """Saves the question, topic and answer in a file. Called just after the user gives the answer as input.
+def record_answer(topic: str, question: str, answer: str, score: int) -> dict:
+    """Saves the question, topic, answer and the score obtained 
+    in a file. Called just after the user gives the answer as input.
     
     Args:
         topic: The topic of the given question.
         question: The given question.
         answer: The answer taken from user input.
+        score: The score obtained on the answer out of 10.
     
     Returns:
         A dict to support JSON format simply stating the success/saved status.
     """
     question = {"topic": topic, "question": question}
-    interview.save_answer(question, answer)
+    interview.save_answer(question, answer, score)
     return {"saved": True}
 
 MODEL = "gemini-3.6-flash"
 TOOL_FUNCTIONS = [get_topics, get_question, record_answer, save_question]
 TOOLS = {f.__name__: f for f in TOOL_FUNCTIONS}
 
+def past_performance_summary() -> str:
+    """Summarise past scores per topic, weakest first, for the system instruction."""
+    stats = interview.topic_stats(interview.load_answers())
+    if not stats:
+        return "No previous sessions."
+    weakest_first = sorted(stats.items(), key=lambda item: item[1]["avg_score"])
+    lines = [
+        f"- {topic}: average {s['avg_score']}/10 over {s['count']} answers"
+        for topic, s in weakest_first
+    ]
+    return "\n".join(lines)
+
+PAST_PERFORMANCE = past_performance_summary()
+
 SYSTEM_INSTRUCTION = f"""You are a mock interviewer: kind and encouraging, but you evaluate fairly and strictly.
 
 # Interview details
 {JD}
+
+# Candidate's past performance (weakest first)
+{PAST_PERFORMANCE}
 
 # How to run the interview
 1. Greet the candidate briefly and ask which topic they want to start with.
@@ -84,25 +103,30 @@ SYSTEM_INSTRUCTION = f"""You are a mock interviewer: kind and encouraging, but y
    - write your own question tailored to the interview details, then save it
      with save_question using a topic label from the Focus topics.
 3. Wait for the candidate's answer. Never answer a question yourself.
-4. Call record_answer right away with the topic, exact question and answer.
-5. Score the answer out of 10 (privately, for now).
+4. Score the answer out of 10 (privately, for now).
+5. Call record_answer right away with the topic, exact question, answer and score.
 6. Decide on a follow-up based on the score:
    - Score below 6: ask ONE follow-up about the biggest gap in the answer,
      to give the candidate a chance to improve it.
-   - Score 6 to 8: no follow-up, move on.
+   - Score 6 to 8: no follow-up, go straight to feedback (step 9).
    - Score above 8: ask ONE harder "stretch" follow-up that goes deeper
      into the same topic (e.g. edge cases, trade-offs, real-world use).
    Never ask more than one follow-up per question.
-7. If you asked a follow-up, call record_answer again for it,
-   using the follow-up question as the question.
-8. Give brief feedback: the score out of 10, one strength, one improvement.
+7. If you asked a follow-up, wait for the candidate's answer and then score it 
+   again out of 10 privately.
+8. Call record_answer again for it, with the same topic, the follow-up
+   question text only without any greeting or comments as the question,
+   its answer and its own score.
+9. Give brief feedback: the score out of 10, one strength, one improvement.
    If there was a follow-up, mention how the follow-up answer changed the score.
-9. Ask whether they want another question, and on which topic.
+10. Ask whether they want another question, and on which topic.
 
 # Rules
 - Keep your messages short; this is a conversation, not an essay.
 - Use the tools only when needed; do not call get_topics if the topics are
   already listed above.
+- Prioritise topics with an average below 6. When greeting, briefly mention
+  the weakest topic and suggest starting there, but let the candidate choose.
 """
 config = types.GenerateContentConfig(
     tools=TOOL_FUNCTIONS,
