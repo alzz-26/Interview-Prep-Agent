@@ -10,6 +10,7 @@ client = genai.Client()
 MAX_STEPS = 5
 JD_FILE = Path(__file__).parent/"interview_details.txt"
 JD = JD_FILE.read_text(encoding="utf-8") if JD_FILE.exists() else "General software / AI interview"
+last_answer_seconds = 0
 
 def get_topics() -> list[str]:
     """Return the list of interview topics available in the question bank.
@@ -66,7 +67,7 @@ def record_answer(topic: str, question: str, answer: str, score: int) -> dict:
         A dict to support JSON format simply stating the success/saved status.
     """
     question = {"topic": topic, "question": question}
-    interview.save_answer(question, answer, score)
+    interview.save_answer(question, answer, score, last_answer_seconds)
     return {"saved": True}
 
 MODEL = "gemini-3.6-flash"
@@ -127,6 +128,10 @@ SYSTEM_INSTRUCTION = f"""You are a mock interviewer: kind and encouraging, but y
   already listed above.
 - Prioritise topics with an average below 6. When greeting, briefly mention
   the weakest topic and suggest starting there, but let the candidate choose.
+- Each candidate message ends with [answered in N seconds].
+  Comment on pacing only if it stands out: under 20 seconds (likely too brief)
+  or over 180 seconds (likely rambling). Ignore it for non-answers like
+  choosing a topic.
 """
 config = types.GenerateContentConfig(
     tools=TOOL_FUNCTIONS,
@@ -159,6 +164,7 @@ def run_agent(content: list) -> str:
 
 def main():
     """Runs the AI agent for mock interview."""
+    global last_answer_seconds
     contents = [types.Content(role="user", parts=[types.Part(text="Start the interview.")])]
     try:
         while True:
@@ -171,12 +177,16 @@ def main():
                     continue 
                 print("API error occurred:", e.message)
                 break
+            start = time.monotonic()
             user_text = input("You: ").strip()
             while not user_text:
                 user_text = input("You: ").strip()
-            if user_text.lower() == ("quit" or "exit"):
+            seconds = round(time.monotonic() - start)
+            last_answer_seconds = seconds
+            if user_text.lower() in ("quit", "exit"):
                 print("Thanks for the motivation to prepare. Good luck! Ending...")
                 break
+            user_text += f"\n\n[answered in {seconds} seconds.]"
             contents.append(types.Content(role="user", parts=[types.Part(text=user_text)]))
     except KeyboardInterrupt:
         print("User interrupted the conversation. Ending...")

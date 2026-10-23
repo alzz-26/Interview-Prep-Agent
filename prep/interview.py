@@ -22,20 +22,28 @@ def list_topics(questions: list[dict]) -> set[str]:
     return {item.get("topic") for item in questions}
 
 def topic_stats(answers: list[dict]) -> dict[str, dict]:
-    """Return count and average score per topic, skipping unscored answers."""
-    scores = {}
+    """Return count, average score and average time taken in seconds
+    per topic, skipping unscored/untimed answers."""
+    avgs = {}
     for record in answers:
         topic = record.get("topic")
         score = record.get("score")
+        second = record.get("seconds")
         if topic is None or score is None:
             continue
-        if topic not in scores:
-            scores[topic] = []
-        scores[topic].append(score)
+        if topic not in avgs:
+            avgs[topic] = {"scores": [], "seconds": []}
+        avgs[topic]["scores"].append(score)
+        if second is not None:
+            avgs[topic]["seconds"].append(second)
 
     return {
-        topic: {"count": len(s), "avg_score": round(sum(s) / len(s), 1)}
-        for topic, s in scores.items()
+        topic: {
+            "count": len(s["scores"]), 
+            "avg_score": round(sum(s["scores"]) / len(s["scores"]), 1), 
+            "avg_time": round(sum(s["seconds"]) / len(s["seconds"])) if len(s["seconds"]) != 0 else None,
+        }
+        for topic, s in avgs.items()
     }
 
 def pick_question(questions: list[dict], topic: str | None=None) -> dict:
@@ -58,14 +66,14 @@ def add_question(topic: str, question: str, path: Path = QUESTIONS_FILE) -> None
     questions.append({"topic": topic, "question": question})
     path.write_text(json.dumps(questions, indent=2), encoding="utf-8")
 
-def save_answer(question: dict, answer: str, score: int | None=None, path: Path=ANSWERS_FILE) -> None:
+def save_answer(question: dict, answer: str, score: int | None=None, seconds: int | None=None, path: Path=ANSWERS_FILE) -> None:
     """Saves the picked question and its answer as a list of dicts in answer file,
     creates it as well if not there."""
     if path.exists() :
         answers = json.loads(path.read_text(encoding="utf-8"))
     else:
         answers = []
-    answers.append({"topic": question["topic"], "question": question["question"], "answer": answer, "score": score})
+    answers.append({"topic": question["topic"], "question": question["question"], "answer": answer, "score": score, "seconds": seconds})
     path.write_text(json.dumps(answers, indent=2), encoding="utf-8")
 
 def main() :
