@@ -34,5 +34,9 @@
   {
     "topic": "behavioral",
     "question": "When working on your PR to nandatown for the index.owned.v1 registry plugin, you had to ensure security invariants like preventing forged cards from evicting listings. Walk me through a piece of critical review feedback or a challenging edge case you encountered during that process, how you responded to it, and what you learned."
+  },
+  {
+    "topic": "apis",
+    "question": "When designing a REST API endpoint that relies on external third-party services that might experience latency spikes or transient failures, how would you approach error handling, timeout configuration, and retry logic to prevent downstream failures and maintain low latency for your API consumers?"
   }
 ]
