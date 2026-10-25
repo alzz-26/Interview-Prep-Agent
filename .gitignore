@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 prep/answers.json
+prep/questions.json
 prep/interview_details.txt
 prep/coach_notes.md
 prep/interview_details.backup.txt
