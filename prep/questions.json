@@ -38,5 +38,9 @@
   {
     "topic": "apis",
     "question": "When designing a REST API endpoint that relies on external third-party services that might experience latency spikes or transient failures, how would you approach error handling, timeout configuration, and retry logic to prevent downstream failures and maintain low latency for your API consumers?"
+  },
+  {
+    "topic": "django",
+    "question": "Given your background with FastAPI and Flask, how does Django's ORM handle related model queries, and specifically, how do select_related and prefetch_related work to prevent N+1 query issues?"
   }
 ]

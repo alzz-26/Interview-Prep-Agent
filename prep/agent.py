@@ -1,5 +1,6 @@
 import time
 import prep.interview as interview
+from prep.coach_agent import get_coaching
 from google import genai
 from google.genai import types, errors
 from dotenv import load_dotenv
@@ -70,8 +71,25 @@ def record_answer(topic: str, question: str, answer: str, score: int) -> dict:
     interview.save_answer(question, answer, score, last_answer_seconds)
     return {"saved": True}
 
+def ask_coach(question: str, answer: str) -> dict:
+    """Get a model answer and improvement tips from the coach for one question.
+
+    Only use this when the candidate agrees to coaching, because it takes an
+    extra request. Pass the exact question text and the candidate's answer.
+
+    Returns:
+        A dict with "coaching" (text to share with the candidate), or "error"
+        if the coach is unavailable right now.
+    """
+    try:
+        coaching = get_coaching(question, answer, JD)
+    except errors.APIError as e:
+        return {"error": f"Coach unavailable ({e.code}). Try again later."}
+    interview.save_coaching(question, answer, coaching)
+    return {"coaching": coaching}
+
 MODEL = "gemini-3.6-flash"
-TOOL_FUNCTIONS = [get_topics, get_question, record_answer, save_question]
+TOOL_FUNCTIONS = [get_topics, get_question, record_answer, save_question, ask_coach]
 TOOLS = {f.__name__: f for f in TOOL_FUNCTIONS}
 
 def past_performance_summary() -> str:
@@ -120,7 +138,10 @@ SYSTEM_INSTRUCTION = f"""You are a mock interviewer: kind and encouraging, but y
    its answer and its own score.
 9. Give brief feedback: the score out of 10, one strength, one improvement.
    If there was a follow-up, mention how the follow-up answer changed the score.
-10. Ask whether they want another question, and on which topic.
+10. If the score was below 6, offer coaching: "Would you like to see a model answer?"
+    Only if the candidate says yes, call ask_coach with the question and their
+    answer, and share the coaching as it is.
+11. Ask whether they want another question, and on which topic.
 
 # Rules
 - Keep your messages short; this is a conversation, not an essay.
@@ -132,6 +153,7 @@ SYSTEM_INSTRUCTION = f"""You are a mock interviewer: kind and encouraging, but y
   Comment on pacing only if it stands out: under 20 seconds (likely too brief)
   or over 180 seconds (likely rambling). Ignore it for non-answers like
   choosing a topic.
+- The candidate can ask for coaching on any earlier question at any time.
 """
 config = types.GenerateContentConfig(
     tools=TOOL_FUNCTIONS,

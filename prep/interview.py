@@ -1,8 +1,10 @@
 import json, random
 from pathlib import Path
+from datetime import datetime
 
 QUESTIONS_FILE = Path(__file__).parent/"questions.json"
 ANSWERS_FILE = Path(__file__).parent/"answers.json"
+COACH_NOTES_FILE = Path(__file__).parent / "coach_notes.md"
 
 def load_questions(path: Path=QUESTIONS_FILE) -> list[dict]:
     """Load the question bank from a JSON file and return it as a list of dicts."""
@@ -75,6 +77,21 @@ def save_answer(question: dict, answer: str, score: int | None=None, seconds: in
         answers = []
     answers.append({"topic": question["topic"], "question": question["question"], "answer": answer, "score": score, "seconds": seconds})
     path.write_text(json.dumps(answers, indent=2), encoding="utf-8")
+
+def save_coaching(question: str, answer: str, coaching: str, path: Path = COACH_NOTES_FILE) -> None:
+    """Append one coaching entry to the coach notes file, creating it if needed."""
+    entry = f"""
+    # {question}
+    *{datetime.now():%Y-%m-%d %H:%M}*
+
+    **Your answer:** {answer}
+
+    {coaching}
+
+    ---
+    """
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(entry)
 
 def main() :
     """Runs the full interview pipeline."""
