@@ -1,0 +1,9 @@
+[
+  {"topic": "behavioral", "question": "Tell me about yourself."},
+  {"topic": "behavioral", "question": "Tell me about a project you are proud of."},
+  {"topic": "behavioral", "question": "Tell me about a time you received critical feedback. What did you do?"},
+  {"topic": "behavioral", "question": "Describe a time you had to learn something new quickly."},
+  {"topic": "behavioral", "question": "Tell me about a mistake you made and what you learned from it."},
+  {"topic": "behavioral", "question": "Tell me about a time you disagreed with a teammate or reviewer."},
+  {"topic": "behavioral", "question": "Why do you want to work here?"}
+]

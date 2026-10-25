@@ -73,3 +73,15 @@ def test_save_answer_appends(tmp_path):
         {"topic": "agents", "question": "What is an agent?", "answer": "An LLM in a tool loop", "score": 5, "seconds": 100},
         {"topic": "nanda", "question": "What is a registry?", "answer": "A phone book for agents", "score": 6, "seconds": None},
     ]
+
+def test_company_name():
+    details = "# Interview\nSixSense: Labs, Backend Intern interview\n# Candidate"
+    assert p.company_name(details) == "SixSense_Labs"      # ':' removed, space -> _
+    assert p.company_name("no heading here") == "interview"
+
+
+def test_next_free_folder(tmp_path):
+    assert p.next_free_folder(tmp_path, "SixSense") == tmp_path / "SixSense"
+    (tmp_path / "SixSense").mkdir()
+    (tmp_path / "SixSense_2").mkdir()
+    assert p.next_free_folder(tmp_path, "SixSense") == tmp_path / "SixSense_3"

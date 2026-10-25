@@ -1,15 +1,22 @@
 import json, random
 from pathlib import Path
 from datetime import datetime
+import re
+import shutil
 
+PREP_DIR = Path(__file__).parent
+ARCHIVE_DIR = PREP_DIR / "archive"
+DETAILS_FILE = PREP_DIR / "interview_details.txt"
+STARTER_FILE = PREP_DIR / "questions.starter.json"
 QUESTIONS_FILE = Path(__file__).parent/"questions.json"
 ANSWERS_FILE = Path(__file__).parent/"answers.json"
 COACH_NOTES_FILE = Path(__file__).parent / "coach_notes.md"
 
-def load_questions(path: Path=QUESTIONS_FILE) -> list[dict]:
-    """Load the question bank from a JSON file and return it as a list of dicts."""
-    questions = json.loads(path.read_text(encoding="utf-8"))
-    return questions
+def load_questions(path: Path = QUESTIONS_FILE) -> list[dict]:
+    """Load the question bank; fall back to the starter bank if it doesn't exist yet."""
+    if not path.exists():
+        path = STARTER_FILE
+    return json.loads(path.read_text(encoding="utf-8"))
 
 def load_answers(path=ANSWERS_FILE) -> list[dict]:
     """Load the file containing the answers to the questions ansked.
@@ -92,6 +99,41 @@ def save_coaching(question: str, answer: str, coaching: str, path: Path = COACH_
     """
     with open(path, "a", encoding="utf-8") as f:
         f.write(entry)
+
+def company_name(details: str) -> str:
+    """Return a folder-safe company name from the line after '# Interview'."""
+    lines = details.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip().lower() == "# interview" and i + 1 < len(lines):
+            name = lines[i + 1].split(",")[0].strip()
+            safe = re.sub(r'[\\/:*?"<>|]', "", name).replace(" ", "_")
+            return safe or "interview"
+    return "interview"
+
+def next_free_folder(base: Path, name: str) -> Path:
+    """Return base/name, or base/name_2, name_3... if it already exists."""
+    folder = base / name
+    n = 2
+    while folder.exists():
+        folder = base / f"{name}_{n}"
+        n += 1
+    return folder
+
+def archive_current_interview() -> Path | None:
+    """Move the current interview's files to archive/<company>/ and reset the bank.
+
+    Returns the archive folder, or None if there was no interview to archive.
+    """
+    if not DETAILS_FILE.exists():
+        return None
+    name = company_name(DETAILS_FILE.read_text(encoding="utf-8"))
+    folder = next_free_folder(ARCHIVE_DIR, name)
+    folder.mkdir(parents=True)
+    for f in [DETAILS_FILE, QUESTIONS_FILE, ANSWERS_FILE, COACH_NOTES_FILE]:
+        if f.exists():
+            shutil.move(f, folder / f.name)
+    shutil.copy(STARTER_FILE, QUESTIONS_FILE)
+    return folder
 
 def main() :
     """Runs the full interview pipeline."""

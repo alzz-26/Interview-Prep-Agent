@@ -2,6 +2,7 @@ from google import genai
 from google.genai import types, errors
 from dotenv import load_dotenv
 from pathlib import Path
+import prep.interview as interview
 
 load_dotenv()
 client = genai.Client()
@@ -18,6 +19,7 @@ SYSTEM_INSTRUCTION = f"""You turn a job description and an optional resume into 
 2. Leave out the "How to use this file" section.
 3. Topic labels: short and lowercase (e.g. agents, testing, behavioral).
 4. Output only the filled template, with no extra comments.
+5. Always include a "behavioral" focus topic.
 """
 
 def read_document(path: str | Path) -> types.Part:
@@ -84,6 +86,9 @@ def main():
     print("\n" + details + "\n")
     choice = input(f"Save to {DETAILS_FILE.name}? This overwrites the current file (y/n): ")
     if choice.strip().lower() == "y":
+        folder = interview.archive_current_interview()
+        if folder is not None:
+            print(f"Archived previous interview to {folder}")
         DETAILS_FILE.write_text(details, encoding="utf-8")
         print("Saved. Run `python -m prep.agent` to practise with it.")
     else:
