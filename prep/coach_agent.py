@@ -31,10 +31,10 @@ config = types.GenerateContentConfig(system_instruction=SYSTEM_INSTRUCTION)
 def get_coaching(question: str, answer: str, details: str = "") -> str:
     """Ask the coach model for a model answer and tips. Raises errors.APIError on failure."""
     prompt = f"""Interview details:
-    {details or "General interview."}
+{details or "General interview."}
 
-    Question: {question}
+Question: {question}
 
-    Candidate's answer: {answer}"""
+Candidate's answer: {answer}"""
     response = client.models.generate_content(model=MODEL, contents=prompt, config=config)
     return response.text or "The coach had nothing to add."

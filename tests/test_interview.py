@@ -79,7 +79,6 @@ def test_company_name():
     assert p.company_name(details) == "SixSense_Labs"      # ':' removed, space -> _
     assert p.company_name("no heading here") == "interview"
 
-
 def test_next_free_folder(tmp_path):
     assert p.next_free_folder(tmp_path, "SixSense") == tmp_path / "SixSense"
     (tmp_path / "SixSense").mkdir()

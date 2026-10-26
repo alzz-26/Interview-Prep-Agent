@@ -88,15 +88,15 @@ def save_answer(question: dict, answer: str, score: int | None=None, seconds: in
 def save_coaching(question: str, answer: str, coaching: str, path: Path = COACH_NOTES_FILE) -> None:
     """Append one coaching entry to the coach notes file, creating it if needed."""
     entry = f"""
-    # {question}
-    *{datetime.now():%Y-%m-%d %H:%M}*
+# {question}
+*{datetime.now():%Y-%m-%d %H:%M}*
 
-    **Your answer:** {answer}
+**Your answer:** {answer}
 
-    {coaching}
+{coaching}
 
-    ---
-    """
+---
+"""
     with open(path, "a", encoding="utf-8") as f:
         f.write(entry)
 
